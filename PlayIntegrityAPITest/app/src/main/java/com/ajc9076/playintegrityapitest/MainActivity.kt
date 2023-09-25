@@ -192,39 +192,46 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
                         .build()
                 )
             // Wait for the integrity token to be generated
-            var integrityToken = ""
             integrityTokenResponse.addOnSuccessListener { integrityTokenResponse1 ->
-                integrityToken = integrityTokenResponse1.token()
+                val integrityToken = integrityTokenResponse1.token()
+                runBlocking {
+                    commandResult = getTokenResponse(integrityTokenResponse, integrityToken, httpClient)
+                }
             }
             // check if it failed
             integrityTokenResponse.addOnFailureListener { e ->
                 Log.d("PlayIntegrityAPITest", "tokenGeneration exception " + e.message)
-            }
-            if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
-                // Post the received token to our server
-                try {
-                    commandResult = httpClient.post<CommandResult>(
-                        "http://periodicgaming.ddns.net:8085/performCommand"
-                    ) {
-                        contentType(ContentType.Application.Json)
-                        body = ServerCommand(
-                            "Log me in please!", integrityToken
-                        )
-                    }
-                } catch (t: Throwable) {
-                    Log.d("PlayIntegrityAPITest", "performCommand exception " + t.message)
-                }
-            } else {
-                Log.d(
-                    "PlayIntegrityAPITest", "requestIntegrityToken failed: " +
-                            integrityTokenResponse.result.toString()
-                )
             }
         } catch (t: Throwable) {
             Log.d("PlayIntegrityAPITest", "requestIntegrityToken exception " + t.message)
         }
     }
     return commandResult
+}
+
+suspend fun getTokenResponse(integrityTokenResponse: Task<IntegrityTokenResponse>, integrityToken: String, httpClient: HttpClient): CommandResult{
+    if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
+        // Post the received token to our server
+        try {
+            val commandResult = httpClient.post<CommandResult>(
+                "http://periodicgaming.ddns.net:8085/performCommand"
+            ) {
+                contentType(ContentType.Application.Json)
+                body = ServerCommand(
+                    "Log me in please!", integrityToken
+                )
+            }
+            return commandResult
+        } catch (t: Throwable) {
+            Log.d("PlayIntegrityAPITest", "performCommand exception " + t.message)
+        }
+    } else {
+        Log.d(
+            "PlayIntegrityAPITest", "requestIntegrityToken failed: " +
+                    integrityTokenResponse.result.toString()
+        )
+    }
+    return CommandResult(false, "getTokenResponse failed", "")
 }
 
 fun ByteArray.toHexString(): String = joinToString(separator = "") {
