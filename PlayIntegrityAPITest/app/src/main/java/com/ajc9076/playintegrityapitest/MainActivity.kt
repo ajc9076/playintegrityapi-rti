@@ -135,6 +135,13 @@ fun DisplayLogin(modifier: Modifier = Modifier) {
                     text = computedIntegrityResult.diagnosticMessage,
                     modifier = modifier
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {
+                    result = 1
+                    computedIntegrityResult = CommandResult(false, "", "")
+                }) {
+                    Text(stringResource(R.string.again))
+                }
             }
         }
     }
@@ -159,7 +166,7 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
     // get nonce from server
     var integrityRandom = IntegrityRandom("", 0U)
     try {
-        val returnedRandom = httpClient.get<IntegrityRandom>("http://129.21.102.162:8080/getRandom")
+        val returnedRandom = httpClient.get<IntegrityRandom>("http://periodicgaming.ddns.net:8085/getRandom")
         integrityRandom = returnedRandom
     } catch (t: Throwable){
         Log.d("PlayIntegrityAPITest", "requestRandom exception " + t.message)
@@ -183,12 +190,12 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
                         .build()
                 )
             // Wait for the integrity token to be generated
-            integrityTokenResponse.await() // TODO wont get a token until the app is on play store
+            integrityTokenResponse.await()
             if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
                 // Post the received token to our server
                 try {
                     commandResult = httpClient.post<CommandResult>(
-                        "http://129.21.102.162:8080/performCommand"
+                        "http://periodicgaming.ddns.net:8085/performCommand"
                     ) {
                         contentType(ContentType.Application.Json)
                         body = ServerCommand(
