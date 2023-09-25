@@ -48,7 +48,6 @@ import io.ktor.client.request.post
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 
 class MainActivity : ComponentActivity() {
@@ -105,14 +104,7 @@ fun DisplayLogin(modifier: Modifier = Modifier) {
                     text = "Loading results...",
                     modifier = modifier
                 )
-                runBlocking {
-                    computedIntegrityResult = computeResultAndParse(context)
-                }
-                if (computedIntegrityResult.commandSuccess) {
-                    result = 3
-                } else {
-                    result = 4
-                }
+                result = 5
             }
             else if (result == 3){
                 Text(
@@ -124,6 +116,16 @@ fun DisplayLogin(modifier: Modifier = Modifier) {
                     text = computedIntegrityResult.diagnosticMessage,
                     modifier = modifier
                 )
+            }
+            else if (result == 5){
+                runBlocking {
+                    computedIntegrityResult = computeResultAndParse(context)
+                }
+                if (computedIntegrityResult.commandSuccess) {
+                    result = 3
+                } else {
+                    result = 4
+                }
             }
             else {
                 Text(
@@ -190,7 +192,14 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
                         .build()
                 )
             // Wait for the integrity token to be generated
-            integrityTokenResponse.await()
+            var integrityToken = ""
+            integrityTokenResponse.addOnSuccessListener { integrityTokenResponse1 ->
+                integrityToken = integrityTokenResponse1.token()
+            }
+            // check if it failed
+            integrityTokenResponse.addOnFailureListener { e ->
+                Log.d("PlayIntegrityAPITest", "tokenGeneration exception " + e.message)
+            }
             if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
                 // Post the received token to our server
                 try {
@@ -199,8 +208,7 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
                     ) {
                         contentType(ContentType.Application.Json)
                         body = ServerCommand(
-                            "Log me in please!",
-                            integrityTokenResponse.result!!.token()
+                            "Log me in please!", integrityToken
                         )
                     }
                 } catch (t: Throwable) {
