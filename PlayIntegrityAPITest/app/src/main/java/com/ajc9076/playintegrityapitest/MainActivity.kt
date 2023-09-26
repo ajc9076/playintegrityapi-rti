@@ -168,7 +168,7 @@ suspend fun computeResultAndParse(context: Context): CommandResult {
     // get nonce from server
     var integrityRandom = IntegrityRandom("", 0U)
     try {
-        val returnedRandom = httpClient.get<IntegrityRandom>("http://periodicgaming.ddns.net:8085/getRandom")
+        val returnedRandom = httpClient.get<IntegrityRandom>("https://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com/getRandom")
         integrityRandom = returnedRandom
     } catch (t: Throwable){
         Log.d("PlayIntegrityAPITest", "requestRandom exception " + t.message)
@@ -214,7 +214,7 @@ suspend fun getTokenResponse(integrityTokenResponse: Task<IntegrityTokenResponse
         // Post the received token to our server
         try {
             val commandResult = httpClient.post<CommandResult>(
-                "http://periodicgaming.ddns.net:8085/performCommand"
+                "https://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com/performCommand"
             ) {
                 contentType(ContentType.Application.Json)
                 body = ServerCommand(
