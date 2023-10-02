@@ -1,6 +1,5 @@
 package com.ajc9076.maliciousintegrityapp.ui.model
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ajc9076.maliciousintegrityapp.data.ServerState
@@ -20,9 +19,9 @@ class MainViewModel: ViewModel() {
         initialValue = MainViewState(ServerState())
     )
 
-    fun performCommand(context: Context) {
+    fun performCommand() {
         viewModelScope.launch {
-            integrityChecker.computeResultAndParse(context)
+            integrityChecker.computeResultAndParse()
         }
     }
 }

@@ -19,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,7 +48,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val imageResource = when(state.serverState.status) {
         ServerStatus.INIT -> R.drawable.malicious
         ServerStatus.WORKING -> R.drawable.three_dots
@@ -75,7 +73,7 @@ fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modif
             Spacer(modifier = Modifier.height(16.dp))
             if (state.serverState.status == ServerStatus.INIT){
                 Button(onClick = {
-                    viewModel.performCommand(context)
+                    viewModel.performCommand()
                 }) {
                     Text(stringResource(R.string.verify))
                 }
@@ -110,7 +108,7 @@ fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modif
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
-                    viewModel.performCommand(context)
+                    viewModel.performCommand()
                 }) {
                     Text(stringResource(R.string.again))
                 }
