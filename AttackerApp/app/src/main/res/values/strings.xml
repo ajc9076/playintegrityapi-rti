@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Malicious Integrity App</string>
+    <string name="verify">Verify Now</string>
+    <string name="again">Try again?</string>
+</resources>

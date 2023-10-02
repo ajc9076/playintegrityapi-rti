@@ -1,4 +1,4 @@
-package com.ajc9076.playintegrityapitest
+package com.ajc9076.maliciousintegrityapp
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,10 +23,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.ajc9076.playintegrityapitest.data.ServerStatus
-import com.ajc9076.playintegrityapitest.ui.model.MainViewModel
-import com.ajc9076.playintegrityapitest.ui.model.MainViewState
-import com.ajc9076.playintegrityapitest.ui.theme.PlayIntegrityAPITestTheme
+import com.ajc9076.maliciousintegrityapp.data.ServerStatus
+import com.ajc9076.maliciousintegrityapp.ui.model.MainViewModel
+import com.ajc9076.maliciousintegrityapp.ui.model.MainViewState
+import com.ajc9076.maliciousintegrityapp.ui.theme.MaliciousIntegrityAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,9 +34,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val viewModel = MainViewModel()
             val state by viewModel.state.collectAsState()
-            PlayIntegrityAPITestTheme {
+            MaliciousIntegrityAppTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     DisplayLogin(state, viewModel)
                 }
             }
@@ -48,7 +51,7 @@ class MainActivity : ComponentActivity() {
 fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val imageResource = when(state.serverState.status) {
-        ServerStatus.INIT -> R.drawable.green_check
+        ServerStatus.INIT -> R.drawable.malicious
         ServerStatus.WORKING -> R.drawable.three_dots
         ServerStatus.SUCCESS -> R.drawable.green_check
         else -> R.drawable.red_x
