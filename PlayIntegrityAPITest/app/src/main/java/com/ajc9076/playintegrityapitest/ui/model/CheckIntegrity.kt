@@ -29,7 +29,8 @@ import kotlinx.coroutines.runBlocking
 
 class CheckIntegrity() {
     private val TAG = "PlayIntegrityAPITest"
-    private val URL = "https://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
+    // purposely insecure http instead of https for demonstration purposes
+    private val URL = "http://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
 
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(Logging) {
