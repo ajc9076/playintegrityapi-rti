@@ -40,7 +40,7 @@ import kotlinx.coroutines.runBlocking
 class MainActivity : ComponentActivity() {
 
     private var fusedLocationProvider: FusedLocationProviderClient? = null
-    private var locationString: String = ""
+    var locationString: String = ""
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -92,7 +92,9 @@ class MainActivity : ComponentActivity() {
     fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
         val context = LocalContext.current
         val imageResource = when(state.serverState.status) {
-            ServerStatus.INIT -> R.drawable.green_check
+            ServerStatus.INIT1 -> R.drawable.three_dots
+            ServerStatus.INIT2 -> R.drawable.three_dots
+            ServerStatus.READY -> R.drawable.green_check
             ServerStatus.WORKING -> R.drawable.three_dots
             ServerStatus.SUCCESS -> R.drawable.green_check
             else -> R.drawable.red_x
@@ -116,7 +118,15 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 when(state.serverState.status) {
-                    ServerStatus.INIT -> {
+                    ServerStatus.INIT1 -> {
+                        viewModel.waitForLocation(locationString)
+                    }
+
+                    ServerStatus.INIT2 -> {
+                        viewModel.waitForLocation(locationString)
+                    }
+
+                    ServerStatus.READY -> {
                         Button(onClick = {
                             if (locationString == "") {
                                 runBlocking {

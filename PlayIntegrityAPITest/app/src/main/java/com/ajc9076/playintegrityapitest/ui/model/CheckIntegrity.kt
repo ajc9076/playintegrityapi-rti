@@ -23,6 +23,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.runBlocking
@@ -46,7 +47,7 @@ class CheckIntegrity() {
     }
 
     private val _serverState: MutableStateFlow<ServerState> =
-        MutableStateFlow(ServerState(ServerStatus.INIT))
+        MutableStateFlow(ServerState(ServerStatus.INIT1))
     val serverState = _serverState.asStateFlow()
 
     suspend fun computeResultAndParse(context: Context, locationString: String) {
@@ -129,5 +130,19 @@ class CheckIntegrity() {
             Log.d(TAG, "requestIntegrityToken failed: " + integrityTokenResponse.result.toString())
         }
         return CommandResult(false, "getTokenResponse failed", "")
+    }
+
+    suspend fun waitForLocation(locationString: String){
+        if (locationString != ""){
+            _serverState.tryEmit(ServerState(ServerStatus.READY, "", false))
+        }
+        else {
+            delay(1000)
+            if (_serverState.value.status == ServerStatus.INIT1) {
+                _serverState.tryEmit(ServerState(ServerStatus.INIT2, "", false))
+            } else {
+                _serverState.tryEmit(ServerState(ServerStatus.INIT1, "", false))
+            }
+        }
     }
 }

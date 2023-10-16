@@ -1,6 +1,7 @@
 package com.ajc9076.playintegrityapitest.ui.model
 
 import android.content.Context
+import androidx.compose.ui.res.integerResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ajc9076.playintegrityapitest.data.ServerState
@@ -25,6 +26,12 @@ class MainViewModel: ViewModel() {
     fun performCommand(context: Context, locationString: String) {
         viewModelScope.launch {
             integrityChecker.computeResultAndParse(context, locationString)
+        }
+    }
+
+    fun waitForLocation(locationString: String) {
+        viewModelScope.launch {
+            integrityChecker.waitForLocation(locationString)
         }
     }
 }

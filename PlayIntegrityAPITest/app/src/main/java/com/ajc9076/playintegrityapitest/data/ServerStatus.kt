@@ -1,7 +1,9 @@
 package com.ajc9076.playintegrityapitest.data
 
 enum class ServerStatus {
-    INIT,
+    INIT1,
+    INIT2,
+    READY,
     WORKING,
     SUCCESS,
     FAILED
