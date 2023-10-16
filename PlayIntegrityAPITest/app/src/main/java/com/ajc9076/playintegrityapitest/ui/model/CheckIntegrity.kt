@@ -49,7 +49,9 @@ class CheckIntegrity() {
         MutableStateFlow(ServerState(ServerStatus.INIT))
     val serverState = _serverState.asStateFlow()
 
-    suspend fun computeResultAndParse(context: Context) {
+    suspend fun computeResultAndParse(context: Context, locationString: String) {
+        val commandString = "Log in with location: $locationString"
+
         _serverState.emit(ServerState(ServerStatus.WORKING, "", false))
 
         // get nonce from server
@@ -65,7 +67,7 @@ class CheckIntegrity() {
         // create final nonce string appended to the actual command
         var nonceString = ""
         if(integrityRandom.random.isNotEmpty()){
-            nonceString = GenerateNonce.generateNonceString("Log me in please!",
+            nonceString = GenerateNonce.generateNonceString(commandString,
                 integrityRandom.random)
         }
         // Create an instance of an IntegrityManager
@@ -83,8 +85,18 @@ class CheckIntegrity() {
                 integrityTokenResponse.addOnSuccessListener { integrityTokenResponse1 ->
                     val integrityToken = integrityTokenResponse1.token()
                     runBlocking {
-                        val commandResult = getTokenResponse(integrityTokenResponse, integrityToken, httpClient)
-                        _serverState.tryEmit(ServerState(ServerStatus.SUCCESS, commandResult.diagnosticMessage, true))
+                        val commandResult = getTokenResponse(integrityTokenResponse, integrityToken, httpClient, commandString)
+                        if (commandResult.commandSuccess) {
+                            _serverState.tryEmit(
+                                ServerState(
+                                    ServerStatus.SUCCESS,
+                                    commandResult.diagnosticMessage,
+                                    true
+                                )
+                            )
+                        } else {
+                            _serverState.tryEmit(ServerState(ServerStatus.FAILED, "", false))
+                        }
                     }
                 }
                 // check if it failed
@@ -99,14 +111,14 @@ class CheckIntegrity() {
         }
     }
 
-    private suspend fun getTokenResponse(integrityTokenResponse: Task<IntegrityTokenResponse>, integrityToken: String, httpClient: HttpClient): CommandResult{
+    private suspend fun getTokenResponse(integrityTokenResponse: Task<IntegrityTokenResponse>, integrityToken: String, httpClient: HttpClient, commandString: String): CommandResult{
         if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
             // Post the received token to our server
             try {
                 val commandResult = httpClient.post<CommandResult>("$URL/performCommand") {
                     contentType(ContentType.Application.Json)
                     body = ServerCommand(
-                        "Log me in please!", integrityToken
+                        commandString, integrityToken
                     )
                 }
                 return commandResult
