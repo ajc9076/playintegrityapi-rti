@@ -1,8 +1,11 @@
 package com.ajc9076.maliciousintegrityapp
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,8 +29,32 @@ import com.ajc9076.maliciousintegrityapp.data.ServerStatus
 import com.ajc9076.maliciousintegrityapp.ui.model.MainViewModel
 import com.ajc9076.maliciousintegrityapp.ui.model.MainViewState
 import com.ajc9076.maliciousintegrityapp.ui.theme.MaliciousIntegrityAppTheme
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 
 class MainActivity : ComponentActivity() {
+
+    private var fusedLocationProvider: FusedLocationProviderClient? = null
+    private var locationString: String = ""
+
+    private val locationPermissionRequest = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+                // fine granted
+                getLocation(Priority.PRIORITY_HIGH_ACCURACY)
+            }
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                // coarse granted
+                getLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+            }
+        }
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -43,74 +70,112 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        locationPermissionRequest.launch(arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION))
     }
-}
 
-@Composable
-fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    val imageResource = when(state.serverState.status) {
-        ServerStatus.INIT -> R.drawable.malicious
-        ServerStatus.WORKING -> R.drawable.three_dots
-        ServerStatus.SUCCESS -> R.drawable.green_check
-        else -> R.drawable.red_x
+    @SuppressLint("MissingPermission")
+    private fun getLocation(priority: Int){
+        fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
+        val result = fusedLocationProvider?.getCurrentLocation(
+            priority,
+            CancellationTokenSource().token
+        )
+        result?.addOnSuccessListener{ fetchedLocation ->
+            locationString =
+                "LAT: ${fetchedLocation?.latitude} LONG: ${fetchedLocation?.longitude}"
+        }
     }
-    Surface(color = Color.Gray) {
-        Column (
-            modifier = modifier
-                .fillMaxSize()
-                .wrapContentSize(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Image(
-                painter = painterResource(imageResource),
-                contentDescription = "Valid App"
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Play Integrity Verification Tester",
+
+    @Composable
+    fun DisplayLogin(state: MainViewState, viewModel: MainViewModel, modifier: Modifier = Modifier) {
+        val imageResource = when(state.serverState.status) {
+            ServerStatus.INIT1 -> R.drawable.three_dots
+            ServerStatus.INIT2 -> R.drawable.three_dots
+            ServerStatus.READY -> R.drawable.malicious
+            ServerStatus.WORKING -> R.drawable.three_dots
+            ServerStatus.SUCCESS -> R.drawable.green_check
+            else -> R.drawable.red_x
+        }
+        Surface(color = Color.Gray) {
+            Column (
                 modifier = modifier
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            if (state.serverState.status == ServerStatus.INIT){
-                Button(onClick = {
-                    viewModel.performCommand()
-                }) {
-                    Text(stringResource(R.string.verify))
-                }
-            }
-            else if (state.serverState.status == ServerStatus.WORKING){
-                Text(
-                    text = "Loading results...",
-                    modifier = modifier
+                    .fillMaxSize()
+                    .wrapContentSize(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                Image(
+                    painter = painterResource(imageResource),
+                    contentDescription = "Valid App"
                 )
-            }
-            else if (state.serverState.status == ServerStatus.SUCCESS){
+                Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Verification Passed All Checks",
+                    text = "Play Integrity Verification Tester",
                     modifier = modifier
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    //text = computedIntegrityResult.diagnosticMessage,
-                    text = state.serverState.verdict,
-                    modifier = modifier
-                )
-            }
-            else {
-                Text(
-                    text = "Verification Failed One or More Checks",
+                    text = "Attacker Location: $locationString",
                     modifier = modifier
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = state.serverState.verdict,
-                    modifier = modifier
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    viewModel.performCommand()
-                }) {
-                    Text(stringResource(R.string.again))
+                when(state.serverState.status){
+
+                    ServerStatus.INIT1 -> {
+                        viewModel.waitForLocation(locationString)
+                    }
+
+                    ServerStatus.INIT2 -> {
+                        viewModel.waitForLocation(locationString)
+                    }
+
+                    ServerStatus.READY -> {
+                        Button(onClick = {
+                            viewModel.performCommand()
+                        }) {
+                            Text(stringResource(R.string.verify))
+                        }
+                    }
+                    ServerStatus.WORKING -> {
+                        Text(
+                            text = "Loading results...",
+                            modifier = modifier
+                        )
+                    }
+                    ServerStatus.SUCCESS -> {
+                        Text(
+                            text = "Verification Passed All Checks",
+                            modifier = modifier
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Victim Location: ", // TODO
+                            modifier = modifier
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = state.serverState.verdict,
+                            modifier = modifier
+                        )
+                    }
+                    ServerStatus.FAILED -> {
+                        Text(
+                            text = "Verification Failed One or More Checks",
+                            modifier = modifier
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = state.serverState.verdict,
+                            modifier = modifier
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            viewModel.performCommand()
+                        }) {
+                            Text(stringResource(R.string.again))
+                        }
+                    }
                 }
             }
         }
