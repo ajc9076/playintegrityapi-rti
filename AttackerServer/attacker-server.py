@@ -139,7 +139,7 @@ def main():
     :return: None
     """
     # Create data storage object
-    client_data = ClientData("")
+    client_data = ClientData("", "")
 
     # Create and start attacker and client threads
     attacker = threading.Thread(target=attacker_server, args=(client_data,))
