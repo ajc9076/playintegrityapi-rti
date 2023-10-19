@@ -69,10 +69,12 @@ def client_request_handler(conn, addr, client_data):
 
     with conn:
         print(f"Connected to {addr}")
+        conn.settimeout(3)
         while True:
-            data = conn.recv(4096)
-            total_data_client += data
-            if len(data) < 4096:
+            try:
+                data = conn.recv(4096)
+                total_data_client += data
+            except TimeoutError:
                 break
 
         if b"Host: localhost" in total_data_client:
