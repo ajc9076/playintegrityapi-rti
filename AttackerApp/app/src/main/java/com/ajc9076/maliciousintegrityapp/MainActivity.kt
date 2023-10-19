@@ -150,7 +150,7 @@ class MainActivity : ComponentActivity() {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Victim Location: ", // TODO
+                            text = "Victim Location: ${state.serverState.location}",
                             modifier = modifier
                         )
                         Spacer(modifier = Modifier.height(16.dp))

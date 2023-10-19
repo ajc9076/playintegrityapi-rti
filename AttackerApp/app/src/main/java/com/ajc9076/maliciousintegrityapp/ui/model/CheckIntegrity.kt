@@ -43,7 +43,7 @@ class CheckIntegrity {
 
     suspend fun computeResultAndParse(){
 
-        _serverState.emit(ServerState(ServerStatus.WORKING, "", false))
+        _serverState.emit(ServerState(ServerStatus.WORKING, "", "", false))
 
         // create server socket to receive communication from participating device
         // might use another server that will handle this since its hard lol
@@ -56,7 +56,7 @@ class CheckIntegrity {
             integrityToken = returnedToken.token
         } catch (t: Throwable){
             Log.d(TAG, "getVictimToken exception " + t.message)
-            _serverState.emit(ServerState(ServerStatus.FAILED, "getVictimToken exception " + t.message, false))
+            _serverState.emit(ServerState(ServerStatus.FAILED, "getVictimToken exception " + t.message, "", false))
         }
 
         // communicate the integrity token to the server
@@ -67,23 +67,23 @@ class CheckIntegrity {
                     commandString, integrityToken
                 )
             }
-            _serverState.emit(ServerState(ServerStatus.SUCCESS, result.diagnosticMessage, true))
+            _serverState.emit(ServerState(ServerStatus.SUCCESS, result.diagnosticMessage, commandString, true))
         } catch (t: Throwable){
             Log.d(TAG, "performCommand exception " + t.message)
-            _serverState.emit(ServerState(ServerStatus.FAILED, "performCommand exception " + t.message, false))
+            _serverState.emit(ServerState(ServerStatus.FAILED, "performCommand exception " + t.message, commandString, false))
         }
     }
 
     suspend fun waitForLocation(locationString: String){
         if (locationString != ""){
-            _serverState.tryEmit(ServerState(ServerStatus.READY, "", false))
+            _serverState.tryEmit(ServerState(ServerStatus.READY, "", "", false))
         }
         else {
             delay(1000)
             if (_serverState.value.status == ServerStatus.INIT1) {
-                _serverState.tryEmit(ServerState(ServerStatus.INIT2, "", false))
+                _serverState.tryEmit(ServerState(ServerStatus.INIT2, "", "", false))
             } else {
-                _serverState.tryEmit(ServerState(ServerStatus.INIT1, "", false))
+                _serverState.tryEmit(ServerState(ServerStatus.INIT1, "", "", false))
             }
         }
     }
