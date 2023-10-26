@@ -51,7 +51,7 @@ class CheckIntegrity {
         var integrityToken = ""
 
         try {
-            val returnedToken = httpClient.get<TokenResult>("http://192.168.1.253:45565/token")
+            val returnedToken = httpClient.get<TokenResult>("http://periodicgaming.ddns.net:45565/token")
             commandString = returnedToken.commandString
             integrityToken = returnedToken.token
         } catch (t: Throwable){
