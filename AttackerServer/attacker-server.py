@@ -78,7 +78,7 @@ def client_request_handler(conn, addr, client_data):
             try:
                 data = conn.recv(4096)
                 total_data_client += data
-                if total_data_client.endswith("}"):
+                if total_data_client.endswith(b"}"):
                     break
             except TimeoutError:
                 break
