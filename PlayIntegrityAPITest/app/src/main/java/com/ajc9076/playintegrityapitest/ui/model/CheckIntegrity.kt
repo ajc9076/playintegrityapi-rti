@@ -33,6 +33,7 @@ class CheckIntegrity() {
     // purposely insecure http instead of https for demonstration purposes
     private val URL = "http://play-integrity-9xfidw6bru2nqvd.ue.r.appspot.com"
 
+    // set up the Ktor HTTP Client
     private val httpClient: HttpClient = HttpClient(CIO) {
         install(Logging) {
             level = LogLevel.ALL
@@ -46,13 +47,17 @@ class CheckIntegrity() {
         }
     }
 
+    // initialize the state of our application
     private val _serverState: MutableStateFlow<ServerState> =
         MutableStateFlow(ServerState(ServerStatus.INIT1))
     val serverState = _serverState.asStateFlow()
 
+    // compute the verification of the app
     suspend fun computeResultAndParse(context: Context, locationString: String) {
+        // set up our command string
         val commandString = "Log in with location: $locationString"
 
+        // indicate to the main UI that verification is under way
         _serverState.emit(ServerState(ServerStatus.WORKING, "", false))
 
         // get nonce from server
@@ -82,11 +87,12 @@ class CheckIntegrity() {
                             .setNonce(nonceString)
                             .build()
                     )
-                // Wait for the integrity token to be generated
+                // Wait for the coroutine that is generating the token to finish
                 integrityTokenResponse.addOnSuccessListener { integrityTokenResponse1 ->
                     val integrityToken = integrityTokenResponse1.token()
                     runBlocking {
                         val commandResult = getTokenResponse(integrityTokenResponse, integrityToken, httpClient, commandString)
+                        // indicate to the main UI that we succeeded in verification
                         if (commandResult.commandSuccess) {
                             _serverState.tryEmit(
                                 ServerState(
@@ -112,9 +118,10 @@ class CheckIntegrity() {
         }
     }
 
+    // send the token to the application server and see if it lets us in
     private suspend fun getTokenResponse(integrityTokenResponse: Task<IntegrityTokenResponse>, integrityToken: String, httpClient: HttpClient, commandString: String): CommandResult{
         if (integrityTokenResponse.isSuccessful && integrityTokenResponse.result != null) {
-            // Post the received token to our server
+            // Post the received token to our application server
             try {
                 val commandResult = httpClient.post<CommandResult>("$URL/performCommand") {
                     contentType(ContentType.Application.Json)
@@ -132,6 +139,8 @@ class CheckIntegrity() {
         return CommandResult(false, "getTokenResponse failed", "")
     }
 
+    // sleep the app for a few seconds until the location data comes in.
+    // Cycle between Init1 and Init2 while waiting to keep the app alive
     suspend fun waitForLocation(locationString: String){
         if (locationString != ""){
             _serverState.tryEmit(ServerState(ServerStatus.READY, "", false))

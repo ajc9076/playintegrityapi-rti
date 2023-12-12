@@ -13,7 +13,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class MainViewModel: ViewModel() {
+    // object used to organize multiple coroutines on a single instance
     private val integrityChecker = CheckIntegrity()
+
+    // set up state in our program
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<MainViewState> = integrityChecker.serverState.mapLatest {
         MainViewState(it)
@@ -23,12 +26,14 @@ class MainViewModel: ViewModel() {
         initialValue = MainViewState(ServerState())
     )
 
+    // launch a coroutine to verify the integrity of the app
     fun performCommand(context: Context, locationString: String) {
         viewModelScope.launch {
             integrityChecker.computeResultAndParse(context, locationString)
         }
     }
 
+    // launch a coroutine to wait for location data to come in
     fun waitForLocation(locationString: String) {
         viewModelScope.launch {
             integrityChecker.waitForLocation(locationString)
